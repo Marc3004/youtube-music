@@ -39,3 +39,7 @@ img {
 ytmusic-cast-button {
 	display: none !important;
 }
+/* hide video/song switcher */
+#av-id {
+    display: none;
+}
