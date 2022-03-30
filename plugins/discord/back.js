@@ -112,7 +112,8 @@ module.exports = (win, { activityTimoutEnabled, activityTimoutTime, listenAlong 
 			] : undefined,
 		};
 
-	
+		activityInfo.largeImageText = parseInt(songInfo.views).toLocaleString() + " Views";
+
 		win.webContents.executeJavaScript('document.getElementById("progress-bar").value').then((ans) => {
 			if (info.lastInfo !== songInfo.title + songInfo.artist) {
 				songInfo.elapsedSeconds = 0;
