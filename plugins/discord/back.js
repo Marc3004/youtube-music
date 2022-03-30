@@ -20,6 +20,7 @@ const info = {
 	rpc: null,
 	ready: false,
 	lastSongInfo: null,
+	lastInfo: null
 };
 /**
  * @type {(() => void)[]}
@@ -104,12 +105,39 @@ module.exports = (win, { activityTimoutEnabled, activityTimoutTime, listenAlong 
 			details: songInfo.title,
 			state: songInfo.artist,
 			largeImageKey: songInfo.imageSrc,
-			largeImageText: songInfo.album,
-				buttons: listenAlong ? [
-				{ label: "Listen Along", url: songInfo.url },
+			/*largeImageText: songInfo.album,*/
+			
+			buttons: listenAlong ? [
+				{ label: "Play on YouTube Music", url: songInfo.url },
 			] : undefined,
 		};
 
+	
+		win.webContents.executeJavaScript('document.getElementById("progress-bar").value').then((ans) => {
+			if (info.lastInfo !== songInfo.title + songInfo.artist) {
+				songInfo.elapsedSeconds = 0;
+			} else {
+			songInfo.elapsedSeconds = Number(ans);
+			}
+			if (songInfo.isPaused) {
+				// Add a paused icon to show that the song is paused
+				activityInfo.smallImageKey = "paused";
+				activityInfo.smallImageText = "Paused";
+				// Set start the timer so the activity gets cleared after a while if enabled
+				if (activityTimoutEnabled)
+					clearActivity = setTimeout(() => info.rpc.clearActivity().catch(console.error), activityTimoutTime ?? 10000);
+			} else {
+				// Add the start and end time of the song
+				const songStartTime = Date.now() - songInfo.elapsedSeconds * 1000;
+				activityInfo.startTimestamp = songStartTime;
+				activityInfo.endTimestamp =
+					songStartTime + songInfo.songDuration * 1000;
+			}
+			info.rpc.setActivity(activityInfo).catch(console.error);
+			info.lastInfo = songInfo.title + songInfo.artist;
+		});
+
+		/*
 		if (songInfo.isPaused) {
 			// Add a paused icon to show that the song is paused
 			activityInfo.smallImageKey = "paused";
@@ -124,8 +152,9 @@ module.exports = (win, { activityTimoutEnabled, activityTimoutTime, listenAlong 
 			activityInfo.endTimestamp =
 				songStartTime + songInfo.songDuration * 1000;
 		}
+*/
 
-		info.rpc.setActivity(activityInfo).catch(console.error);
+
 	};
 
 	// If the page is ready, register the callback
