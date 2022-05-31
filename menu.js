@@ -51,6 +51,7 @@ const mainMenuTemplate = (win) => {
 							label: plugin,
 							submenu: [
 								pluginEnabledMenu(plugin, "Enabled", true, refreshMenu),
+								{ type: "separator" },
 								...getPluginMenu(win, config.plugins.getOptions(plugin), refreshMenu),
 							],
 						};
@@ -80,12 +81,25 @@ const mainMenuTemplate = (win) => {
 					},
 				},
 				{
-					label: "Remove upgrade button",
-					type: "checkbox",
-					checked: config.get("options.removeUpgradeButton"),
-					click: (item) => {
-						config.setMenuOption("options.removeUpgradeButton", item.checked);
-					},
+					label: "Visual Tweaks",
+					submenu: [
+						{
+							label: "Remove upgrade button",
+							type: "checkbox",
+							checked: config.get("options.removeUpgradeButton"),
+							click: (item) => {
+								config.setMenuOption("options.removeUpgradeButton", item.checked);
+							},
+						},
+						{
+							label: "Force show like buttons",
+							type: "checkbox",
+							checked: config.get("options.ForceShowLikeButtons"),
+							click: (item) => {
+								config.set("options.ForceShowLikeButtons", item.checked);
+							},
+						},
+					],
 				},
 				{
 					label: "Single instance lock",
@@ -98,6 +112,15 @@ const mainMenuTemplate = (win) => {
 						} else if (!item.checked && app.hasSingleInstanceLock()) {
 							app.releaseSingleInstanceLock();
 						}
+					},
+				},
+				{
+					label: "Always on top",
+					type: "checkbox",
+					checked: config.get("options.alwaysOnTop"),
+					click: (item) => {
+						config.setMenuOption("options.alwaysOnTop", item.checked);
+						win.setAlwaysOnTop(item.checked);
 					},
 				},
 				...(is.windows() || is.linux()
