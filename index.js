@@ -2,8 +2,6 @@
 const path = require("path");
 
 const electron = require("electron");
-const remote = require('@electron/remote/main');
-remote.initialize();
 const enhanceWebRequest = require("electron-better-web-request").default;
 const is = require("electron-is");
 const unhandled = require("electron-unhandled");
@@ -15,6 +13,7 @@ const { fileExists, injectCSS } = require("./plugins/utils");
 const { isTesting } = require("./utils/testing");
 const { setUpTray } = require("./tray");
 const { setupSongInfo } = require("./providers/song-info");
+const { setupAppControls, restart } = require("./providers/app-controls");
 
 // Catch errors and log them
 unhandled({
@@ -120,7 +119,6 @@ function createMainWindow() {
 			contextIsolation: false,
 			preload: path.join(__dirname, "preload.js"),
 			nodeIntegrationInSubFrames: true,
-			nativeWindowOpen: true, // window.open return Window object(like in regular browsers), not BrowserWindowProxy
 			affinity: "main-window", // main window, and addition windows should work in one process
 			...(isTesting()
 				? {
@@ -138,7 +136,6 @@ function createMainWindow() {
 			: "default",
 		autoHideMenuBar: config.get("options.hideMenu"),
 	});
-	remote.enable(win.webContents);
 
 	if (windowPosition) {
 		const { x, y } = windowPosition;
@@ -175,6 +172,10 @@ function createMainWindow() {
 	win.webContents.loadURL(urlToLoad);
 	win.on("closed", onClosed);
 
+	const setPiPOptions = config.plugins.isEnabled("picture-in-picture") 
+		? (key, value) => require("./plugins/picture-in-picture/back").setOptions({ [key]: value })
+		: () => {};
+
 	win.on("move", () => {
 		if (win.isMaximized()) return;
 		let position = win.getPosition();
@@ -183,6 +184,8 @@ function createMainWindow() {
 			config.plugins.getOptions("picture-in-picture")["isInPiP"];
 		if (!isPiPEnabled) {
 			lateSave("window-position", { x: position[0], y: position[1] });
+		} else if(config.plugins.getOptions("picture-in-picture")["savePosition"]) {
+			lateSave("pip-position", position, setPiPOptions);
 		}
 	});
 
@@ -190,31 +193,36 @@ function createMainWindow() {
 
 	win.on("resize", () => {
 		const windowSize = win.getSize();
-
 		const isMaximized = win.isMaximized();
-		if (winWasMaximized !== isMaximized) {
-			winWasMaximized = isMaximized;
-			config.set("window-maximized", isMaximized);
-		}
+
 		const isPiPEnabled =
 			config.plugins.isEnabled("picture-in-picture") &&
 			config.plugins.getOptions("picture-in-picture")["isInPiP"];
-		if (!isMaximized && !isPiPEnabled) {
+
+		if (!isPiPEnabled && winWasMaximized !== isMaximized) {
+			winWasMaximized = isMaximized;
+			config.set("window-maximized", isMaximized);
+		}
+		if (isMaximized) return;
+
+		if (!isPiPEnabled) {
 			lateSave("window-size", {
 				width: windowSize[0],
 				height: windowSize[1],
 			});
+		} else if(config.plugins.getOptions("picture-in-picture")["saveSize"]) {
+			lateSave("pip-size", windowSize, setPiPOptions);
 		}
 	});
 
 	let savedTimeouts = {};
-	function lateSave(key, value) {
+	function lateSave(key, value, fn = config.set) {
 		if (savedTimeouts[key]) clearTimeout(savedTimeouts[key]);
 
 		savedTimeouts[key] = setTimeout(() => {
-			config.set(key, value);
+			fn(key, value);
 			savedTimeouts[key] = undefined;
-		}, 1000)
+		}, 600);
 	}
 
 	win.webContents.on("render-process-gone", (event, webContents, details) => {
@@ -261,6 +269,7 @@ app.once("browser-window-created", (event, win) => {
 
 	setupSongInfo(win);
 	loadPlugins(win);
+	setupAppControls();
 
 	win.webContents.on("did-fail-load", (
 		_event,
@@ -448,13 +457,8 @@ function showUnresponsiveDialog(win, details) {
 		cancelId: 0
 	}).then( result => {
 		switch (result.response) {
-			case 1: //if relaunch - relaunch+exit
-				app.relaunch();
-			case 2:
-				app.quit();
-				break;
-			default:
-				break;
+			case 1: restart(); break;
+			case 2: app.quit(); break;
 		}
 	});
 }
