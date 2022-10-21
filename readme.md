@@ -33,6 +33,19 @@ You can check out the [latest release](https://github.com/th-ch/youtube-music/re
 
 Install the `youtube-music-bin` package from the AUR. For AUR installation instructions, take a look at this [wiki page](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages).
 
+### MacOS
+
+If you get an error "is damaged and can’t be opened." when launching the app, run `xattr -cr /Applications/YouTube\ Music.app` in Terminal.
+
+### Windows
+
+You can use the [Scoop package manager](https://scoop.sh) to install the `youtube-music` package from the [`extras` bucket](https://github.com/ScoopInstaller/Extras).
+
+```
+scoop bucket add extras
+scoop install extras/youtube-music
+```
+
 ## Available plugins:
 
 - **Ad Blocker**: Block all ads and tracking out of the box
@@ -92,6 +105,12 @@ Install the `youtube-music-bin` package from the AUR. For AUR installation instr
 - **Auto confirm when paused** (Always Enabled): disable the ["Continue Watching?"](https://user-images.githubusercontent.com/61631665/129977894-01c60740-7ec6-4bf0-9a2c-25da24491b0e.png) popup that pause music after a certain time
 
 > If using `Hide Menu` option - you can show the menu with the `alt` key (or `escape` if using the in-app-menu plugin)
+
+## Themes
+
+You can load CSS files to change the look of the application (Options > Visual Tweaks > Themes).
+
+Some predefined themes are available in https://github.com/kerichdev/themes-for-ytmdesktop-player.
 
 ## Dev
 
