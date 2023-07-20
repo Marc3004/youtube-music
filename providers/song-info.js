@@ -4,6 +4,8 @@ const fetch = require("node-fetch");
 
 const config = require("../config");
 
+const { cache } = require("../providers/decorators")
+
 // Fill songInfo with empty values
 /**
  * @typedef {songInfo} SongInfo
@@ -25,16 +27,21 @@ const songInfo = {
 };
 
 // Grab the native image using the src
-const getImage = async (src) => {
-	const result = await fetch(src);
-	const buffer = await result.buffer();
-	const output = nativeImage.createFromBuffer(buffer);
-	if (output.isEmpty() && !src.endsWith(".jpg") && src.includes(".jpg")) { // fix hidden webp files (https://github.com/th-ch/youtube-music/issues/315)
-		return getImage(src.slice(0, src.lastIndexOf(".jpg") + 4));
-	} else {
-		return output;
+const getImage = cache(
+	/** 
+	 * @returns {Promise<Electron.NativeImage>}
+	 */
+	async (src) => {
+		const result = await fetch(src);
+		const buffer = await result.buffer();
+		const output = nativeImage.createFromBuffer(buffer);
+		if (output.isEmpty() && !src.endsWith(".jpg") && src.includes(".jpg")) { // fix hidden webp files (https://github.com/th-ch/youtube-music/issues/315)
+			return getImage(src.slice(0, src.lastIndexOf(".jpg") + 4));
+		} else {
+			return output;
+		}
 	}
-};
+);
 
 const handleData = async (responseText, win) => {
 	const data = JSON.parse(responseText);
@@ -60,12 +67,10 @@ const handleData = async (responseText, win) => {
 		songInfo.videoId = videoDetails.videoId;
 		songInfo.album = data?.videoDetails?.album; // Will be undefined if video exist
 
-		const oldUrl = songInfo.imageSrc;
-		songInfo.imageSrc = videoDetails.thumbnail?.thumbnails?.pop()?.url.split("?")[0];
-		if (oldUrl !== songInfo.imageSrc) {
-			songInfo.image = await getImage(songInfo.imageSrc);
-		}
-
+		const thumbnails = videoDetails.thumbnail?.thumbnails;
+		songInfo.imageSrc = thumbnails[thumbnails.length - 1]?.url.split("?")[0];
+		songInfo.image = await getImage(songInfo.imageSrc);
+		
 		win.webContents.send("update-song-info", JSON.stringify(songInfo));
 	}
 };
@@ -95,7 +100,7 @@ const registerProvider = (win) => {
 		await handleData(responseText, win);
 		handlingData = false;
 		callbacks.forEach((c) => {
-			c(songInfo);
+			c(songInfo, "video-src-changed");
 		});
 	});
 	ipcMain.on("playPaused", (_, { isPaused, elapsedSeconds }) => {
@@ -103,7 +108,7 @@ const registerProvider = (win) => {
 		songInfo.elapsedSeconds = elapsedSeconds;
 		if (handlingData) return;
 		callbacks.forEach((c) => {
-			c(songInfo);
+			c(songInfo, "playPaused");
 		});
 	})
 };

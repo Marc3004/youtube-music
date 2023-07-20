@@ -16,6 +16,7 @@ const defaultConfig = {
 		autoResetAppCache: false,
 		resumeOnStart: true,
 		proxy: "",
+		startingPage: "",
 	},
 	plugins: {
 		// Enabled plugins
@@ -46,6 +47,7 @@ const defaultConfig = {
 		},
 		discord: {
 			enabled: false,
+			autoReconnect: true, // if enabled, will try to reconnect to discord every 5 seconds after disconnecting or failing to connect
 			activityTimoutEnabled: true, // if enabled, the discord rich presence gets cleared when music paused after the time specified below
 			activityTimoutTime: 10 * 60 * 1000, // 10 minutes
 			listenAlong: true, // add a "listen along" button to rich presence
@@ -55,7 +57,12 @@ const defaultConfig = {
 			enabled: false,
 			unpauseNotification: false,
 			urgency: "normal", //has effect only on Linux 
-			interactive: false //has effect only on Windows
+			// the following has effect only on Windows
+			interactive: true,
+			toastStyle: 1, // see plugins/notifications/utils for more info
+			refreshOnPlayPause: false,
+			trayControls: true,
+			hideButtonText: false 
 		},
 		"precise-volume": {
 			enabled: false,
@@ -97,6 +104,13 @@ const defaultConfig = {
 		},
 		"skip-silences": {
 			onlySkipBeginning: false,
+		},
+		"crossfade": {
+			enabled: false,
+			fadeInDuration: 1500, // ms
+			fadeOutDuration: 5000, // ms
+			secondsBeforeEnd: 10, // s
+			fadeScaling: "linear", // 'linear', 'logarithmic' or a positive number in dB
 		},
 		visualizer: {
 			enabled: false,

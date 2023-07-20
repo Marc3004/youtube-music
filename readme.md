@@ -35,7 +35,10 @@ Install the `youtube-music-bin` package from the AUR. For AUR installation instr
 
 ### MacOS
 
-If you get an error "is damaged and can’t be opened." when launching the app, run `xattr -cr /Applications/YouTube\ Music.app` in Terminal.
+If you get an error "is damaged and can’t be opened." when launching the app, run the following in the Terminal:
+```
+xattr -cr /Applications/YouTube\ Music.app
+```
 
 ### Windows
 
@@ -65,6 +68,10 @@ winget install th-ch.YouTubeMusic
 - **Bypass age restrictions**: bypass YouTube's age verification
 
 - **Captions selector**: Enable captions
+
+- **Compact sidebar**: Always set the sidebar in compact mode
+
+- **Crossfade**: Crossfade between songs
 
 - **Disable Autoplay**: Makes every song start in "paused" mode
 
@@ -116,7 +123,7 @@ winget install th-ch.YouTubeMusic
 
 - **Auto confirm when paused** (Always Enabled): disable the ["Continue Watching?"](https://user-images.githubusercontent.com/61631665/129977894-01c60740-7ec6-4bf0-9a2c-25da24491b0e.png) popup that pause music after a certain time
 
-> If using `Hide Menu` option - you can show the menu with the `alt` key (or `escape` if using the in-app-menu plugin)
+> If `Hide Menu` option is on - you can show the menu with the <kbd>alt</kbd> key (or <kbd>\`</kbd> [backtick] if using the in-app-menu plugin)
 
 ## Themes
 

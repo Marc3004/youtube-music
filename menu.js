@@ -7,6 +7,7 @@ const { restart } = require("./providers/app-controls");
 
 const { getAllPlugins } = require("./plugins/utils");
 const config = require("./config");
+const { startingPages } = require("./providers/extracted-data");
 
 const prompt = require("custom-electron-prompt");
 const promptOptions = require("./providers/prompt-options");
@@ -44,12 +45,16 @@ const mainMenuTemplate = (win) => {
 				...getAllPlugins().map((plugin) => {
 					const pluginPath = path.join(__dirname, "plugins", plugin, "menu.js")
 					if (existsSync(pluginPath)) {
+						let pluginLabel = plugin;
+						if (pluginLabel === "crossfade") {
+							pluginLabel = "crossfade [beta]";
+						}
 						if (!config.plugins.isEnabled(plugin)) {
-							return pluginEnabledMenu(plugin, "", true, refreshMenu);
+							return pluginEnabledMenu(plugin, pluginLabel, true, refreshMenu);
 						}
 						const getPluginMenu = require(pluginPath);
 						return {
-							label: plugin,
+							label: pluginLabel,
 							submenu: [
 								pluginEnabledMenu(plugin, "Enabled", true, refreshMenu),
 								{ type: "separator" },
@@ -57,7 +62,6 @@ const mainMenuTemplate = (win) => {
 							],
 						};
 					}
-
 					return pluginEnabledMenu(plugin);
 				}),
 			],
@@ -82,6 +86,17 @@ const mainMenuTemplate = (win) => {
 					},
 				},
 				{
+					label: 'Starting page',
+					submenu: Object.keys(startingPages).map((name) => ({
+						label: name,
+						type: 'radio',
+						checked: config.get('options.startingPage') === name,
+						click: () => {
+							config.set('options.startingPage', name);
+						},
+					}))
+				},
+				{
 					label: "Visual Tweaks",
 					submenu: [
 						{
@@ -93,12 +108,33 @@ const mainMenuTemplate = (win) => {
 							},
 						},
 						{
-							label: "Force show like buttons",
-							type: "checkbox",
-							checked: config.get("options.ForceShowLikeButtons"),
-							click: (item) => {
-								config.set("options.ForceShowLikeButtons", item.checked);
-							},
+							label: "Like buttons",
+							submenu: [
+								{
+									label: "Default",
+									type: "radio",
+									checked: !config.get("options.likeButtons"),
+									click: () => {
+										config.set("options.likeButtons", '');
+									},
+								},
+								{
+									label: "Force show",
+									type: "radio",
+									checked: config.get("options.likeButtons") === 'force',
+									click: () => {
+										config.set("options.likeButtons", 'force');
+									}
+								},
+								{
+									label: "Hide",
+									type: "radio",
+									checked: config.get("options.likeButtons") === 'hide',
+									click: () => {
+										config.set("options.likeButtons", 'hide');
+									}
+								},
+							],
 						},
 						{
 							label: "Theme",
@@ -133,14 +169,12 @@ const mainMenuTemplate = (win) => {
 				{
 					label: "Single instance lock",
 					type: "checkbox",
-					checked: config.get("options.singleInstanceLock"),
+					checked: true,
 					click: (item) => {
-						config.setMenuOption("options.singleInstanceLock", item.checked);
-						if (item.checked && !app.hasSingleInstanceLock()) {
-							app.requestSingleInstanceLock();
-						} else if (!item.checked && app.hasSingleInstanceLock()) {
+						if (!item.checked && app.hasSingleInstanceLock())
 							app.releaseSingleInstanceLock();
-						}
+						else if (item.checked && !app.hasSingleInstanceLock())
+							app.requestSingleInstanceLock();
 					},
 				},
 				{
@@ -163,7 +197,7 @@ const mainMenuTemplate = (win) => {
 								if (item.checked && !config.get("options.hideMenuWarned")) {
 									dialog.showMessageBox(win, {
 										type: 'info', title: 'Hide Menu Enabled',
-										message: "Menu will be hidden on next launch, use 'Alt' to show it (or 'Escape' if using in-app-menu)"
+										message: "Menu will be hidden on next launch, use [Alt] to show it (or backtick [`] if using in-app-menu)"
 									});
 								}
 							},

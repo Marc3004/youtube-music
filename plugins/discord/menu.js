@@ -4,19 +4,29 @@ const { setMenuOptions } = require("../../config/plugins");
 const promptOptions = require("../../providers/prompt-options");
 const { clear, connect, registerRefresh, isConnected } = require("./back");
 
-let hasRegisterred = false;
+const { singleton } = require("../../providers/decorators")
+
+const registerRefreshOnce = singleton((refreshMenu) => {
+	registerRefresh(refreshMenu);
+});
 
 module.exports = (win, options, refreshMenu) => {
-	if (!hasRegisterred) {
-		registerRefresh(refreshMenu);
-		hasRegisterred = true;
-	}
+	registerRefreshOnce(refreshMenu);
 
 	return [
 		{
 			label: isConnected() ? "Connected" : "Reconnect",
 			enabled: !isConnected(),
 			click: connect,
+		},
+		{
+			label: "Auto reconnect",
+			type: "checkbox",
+			checked: options.autoReconnect,
+			click: (item) => {
+				options.autoReconnect = item.checked;
+				setMenuOptions('discord', options);
+			},
 		},
 		{
 			label: "Clear activity",
